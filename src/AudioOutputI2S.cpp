@@ -38,7 +38,7 @@ AudioOutputI2S::AudioOutputI2S(int port, bool builtInDAC, int use_apll)
       esp_chip_info_t out_info;
       esp_chip_info(&out_info);
       if(out_info.revision > 0) {
-        use_apll = 1;
+        use_apll = use_apll;
       }
     }
     i2s_config_t i2s_config_dac = {
