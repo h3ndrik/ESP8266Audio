@@ -38,7 +38,7 @@ AudioOutputI2S::AudioOutputI2S(int port, bool builtInDAC, int use_apll)
       esp_chip_info_t out_info;
       esp_chip_info(&out_info);
       if(out_info.revision > 0) {
-        use_apll = use_apll;
+        use_apll = 1;
       }
     }
     i2s_config_t i2s_config_dac = {
@@ -50,7 +50,7 @@ AudioOutputI2S::AudioOutputI2S(int port, bool builtInDAC, int use_apll)
       .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1, // high interrupt priority
       .dma_buf_count = 32,
       .dma_buf_len = 64,   //Interrupt level 1
-      .use_apll = 0 // Use audio PLL
+      .use_apll = use_apll // Use audio PLL
     };
     Serial.printf("+%d %p\n", portNo, &i2s_config_dac);
     if (i2s_driver_install((i2s_port_t)portNo, &i2s_config_dac, 0, NULL) != ESP_OK) {
