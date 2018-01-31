@@ -79,10 +79,18 @@ class ICYMDReader {
       char xxx[16];
       if (saved>=0) avail--; // Throw away any unread bytes
       while (avail > 16) {
+#ifdef ESP32
+        stream->read(xxx, 16);
+#else
         stream->readBytes(xxx, 16);
+#endif
         avail -= 16;
       }
+#ifdef ESP32
+      stream->read(xxx, avail);
+#else
       stream->readBytes(xxx, avail);
+#endif
     }
     int read(uint8_t *dest, int len) {
       if (!len) return 0;
@@ -100,7 +108,11 @@ class ICYMDReader {
         if ((avail>0) && (len>0)) {
           ptr = 0;
           int toRead = (sizeof(buff)>avail)? avail : sizeof(buff);
+#ifdef ESP32
+          int read = stream->read(buff, toRead);
+#else
           int read = stream->readBytes(buff, toRead);
+#endif
           if (read != toRead) return 0; // Error, short read!
         }
       }
@@ -164,7 +176,11 @@ retry:
   // If the read would hit an ICY block, split it up...
   if (((int)(icyByteCount + len) > (int)icyMetaInt) && (icyMetaInt > 0)) {
     int beforeIcy = icyMetaInt - icyByteCount;
+#ifdef ESP32
+    int ret = stream->read(reinterpret_cast<uint8_t*>(data), beforeIcy);
+#else
     int ret = stream->readBytes(reinterpret_cast<uint8_t*>(data), beforeIcy);
+#endif
     read += ret;
     pos += ret;
     len -= ret;
@@ -224,7 +240,11 @@ retry:
     icyByteCount = 0;
   }
 
+#ifdef ESP32
+  int ret = stream->read(reinterpret_cast<uint8_t*>(data), len);
+#else
   int ret = stream->readBytes(reinterpret_cast<uint8_t*>(data), len);
+#endif
   read += ret;
   pos += ret;
   icyByteCount += ret;
