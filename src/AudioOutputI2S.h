@@ -34,6 +34,7 @@ class AudioOutputI2S : public AudioOutput
     virtual bool SetChannels(int channels) override;
     virtual bool begin() override;
     virtual bool ConsumeSample(int16_t sample[2]) override;
+    virtual bool SetSilence() override;
     virtual bool stop() override;
     
     bool SetOutputModeMono(bool mono);  // Force mono output no matter the input

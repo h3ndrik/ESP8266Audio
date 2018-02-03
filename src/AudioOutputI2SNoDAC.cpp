@@ -99,3 +99,11 @@ bool AudioOutputI2SNoDAC::ConsumeSample(int16_t sample[2])
 #endif
   return true;
 }
+
+bool AudioOutputI2SNoDAC::SetSilence()
+{
+#ifdef ESP32
+  i2s_zero_dma_buffer((i2s_port_t)portNo);
+#endif
+  return true;
+}

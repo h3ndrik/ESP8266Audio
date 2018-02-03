@@ -194,6 +194,7 @@ retry:
       }
 
       if (!DecodeNextFrame()) {
+        output->SetSilence();
         goto retry;
       }
       samplePtr = 9999;

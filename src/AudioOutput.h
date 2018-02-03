@@ -44,6 +44,7 @@ class AudioOutput
       }
       return count;
     }
+    virtual bool SetSilence() { return false; }
     virtual bool stop() { return false; }
     virtual bool loop() { return true; }
 
