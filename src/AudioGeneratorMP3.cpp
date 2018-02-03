@@ -194,6 +194,10 @@ retry:
       }
 
       if (!DecodeNextFrame()) {
+#ifdef ESP32
+        int16_t silence[2] = {0,0};
+        output->ConsumeSample(silence);
+#endif
         goto retry;
       }
       samplePtr = 9999;
