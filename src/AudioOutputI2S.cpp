@@ -171,7 +171,7 @@ bool AudioOutputI2S::ConsumeSample(int16_t sample[2])
 #endif
 }
 
-bool AudioOutputI2S::stop()
+bool AudioOutputI2S::SetSilence()
 {
 #ifdef ESP32
   i2s_zero_dma_buffer((i2s_port_t)portNo);
@@ -179,4 +179,10 @@ bool AudioOutputI2S::stop()
   return true;
 }
 
-
+bool AudioOutputI2S::stop()
+{
+#ifdef ESP32
+  i2s_zero_dma_buffer((i2s_port_t)portNo);
+#endif
+  return true;
+}

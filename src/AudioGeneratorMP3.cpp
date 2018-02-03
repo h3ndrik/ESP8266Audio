@@ -194,8 +194,7 @@ retry:
       }
 
       if (!DecodeNextFrame()) {
-        int16_t silence[2] = {0,0};
-        output->ConsumeSample(silence);
+        output->SetSilence();
         goto retry;
       }
       samplePtr = 9999;

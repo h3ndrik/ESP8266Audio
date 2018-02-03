@@ -29,6 +29,7 @@ class AudioOutputI2SNoDAC : public AudioOutputI2S
     AudioOutputI2SNoDAC(int port = 0);
     virtual ~AudioOutputI2SNoDAC() override;
     virtual bool ConsumeSample(int16_t sample[2]) override;
+    virtual bool SetSilence() override;
     
     bool SetOversampling(int os);
     
