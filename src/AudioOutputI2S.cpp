@@ -71,7 +71,10 @@ AudioOutputI2S::AudioOutputI2S(int port, bool builtInDAC, int use_apll)
 #endif
   i2sOn = true;
   mono = false;
+  bps = 16;
+  channels = 2;
   SetGain(1.0);
+  SetRate(44100); // Default
   this->builtInDAC = builtInDAC;
 }
 
