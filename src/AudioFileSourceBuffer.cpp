@@ -128,7 +128,7 @@ uint32_t AudioFileSourceBuffer::read(void *data, uint32_t len)
 
   if (len) {
     // Still need more, try direct read from src
-    bytes += src->read(ptr, len);
+    //bytes += src->read(ptr, len);  // but don't block until the beginning of the next iteration
     // We're out of buffered data, need to force a complete refill.  Thanks, @armSeb
     readPtr = 0;
     writePtr = 0;
