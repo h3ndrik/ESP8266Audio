@@ -41,6 +41,7 @@ bool AudioFileSourceHTTPStream::open(const char *url)
   http.setReuse(true);
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
+    http.getStream().flush(); // work around https://github.com/espressif/arduino-esp32/issues/828
     http.end();
     cb.st(STATUS_HTTPFAIL, PSTR("Can't open HTTP request"));
     return false;
@@ -53,6 +54,7 @@ bool AudioFileSourceHTTPStream::open(const char *url)
 
 AudioFileSourceHTTPStream::~AudioFileSourceHTTPStream()
 {
+  http.getStream().flush(); // work around https://github.com/espressif/arduino-esp32/issues/828
   http.end();
 }
 
@@ -79,6 +81,7 @@ uint32_t AudioFileSourceHTTPStream::readInternal(void *data, uint32_t len, bool 
 retry:
   if (!http.connected()) {
     cb.st(STATUS_DISCONNECTED, PSTR("Stream disconnected"));
+    http.getStream().flush(); // work around https://github.com/espressif/arduino-esp32/issues/828
     http.end();
     for (int i = 0; i < reconnectTries; i++) {
       char buff[32];
@@ -110,6 +113,7 @@ retry:
   size_t avail = stream->available();
   if (!nonBlock && !avail) {
     cb.st(STATUS_NODATA, PSTR("No stream data available"));
+    http.getStream().flush(); // work around https://github.com/espressif/arduino-esp32/issues/828
     http.end();
     goto retry;
   }
@@ -130,6 +134,7 @@ bool AudioFileSourceHTTPStream::seek(int32_t pos, int dir)
 
 bool AudioFileSourceHTTPStream::close()
 {
+  http.getStream().flush(); // work around https://github.com/espressif/arduino-esp32/issues/828
   http.end();
   return true;
 }
