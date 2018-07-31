@@ -12,7 +12,7 @@
 #endif
 #include "AudioInputI2S.h"
 
-AudioInputI2S::AudioInputI2S(int port=0, int use_apll=APLL_DISABLE)
+AudioInputI2S::AudioInputI2S(int port, int use_apll)
 {
   this->portNo = port;
   this->i2sOn = false;
@@ -86,7 +86,8 @@ uint32_t AudioInputI2S::read(void* data, size_t len)
 {
   if (!i2sOn) return 0;
   size_t bytes_read = 0;
-  i2s_read((i2s_port_t)portNo, data, (size_t)len, bytes_read, portMAX_DELAY);
+  bytes_read = i2s_read_bytes((i2s_port_t)portNo, (char*)data, (size_t)len, portMAX_DELAY);
+  //i2s_read((i2s_port_t)portNo, data, (size_t)len, bytes_read, portMAX_DELAY);
   return bytes_read;
 }
 
