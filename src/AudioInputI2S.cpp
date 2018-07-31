@@ -39,7 +39,7 @@ AudioInputI2S::AudioInputI2S(int port=0, int use_apll=APLL_DISABLE)
       .dma_buf_len = 8,
       .use_apll = use_apll // Use audio PLL
     };
-    Serial.printf("+%d %p\n", portNo, &i2s_config_dac);
+    Serial.printf("+%d %p\n", portNo, &i2s_config_adc);
     if (i2s_driver_install((i2s_port_t)portNo, &i2s_config_adc, 0, NULL) != ESP_OK) {
       Serial.println("ERROR: Unable to install I2S drives\n");
     }
@@ -54,7 +54,6 @@ AudioInputI2S::AudioInputI2S(int port=0, int use_apll=APLL_DISABLE)
   }
 #endif
   i2sOn = true;
-  mono = false;
   bps = 32;
   channels = 1;
 }
@@ -83,14 +82,15 @@ uint32_t AudioInputI2S::GetSample()
   return sampleIn;
 }
 
-uint32_t AudioInputI2S::read(void* data, uint32_t len)
+uint32_t AudioInputI2S::read(void* data, size_t len)
 {
   if (!i2sOn) return 0;
-
-  i2s_read_bytes((i2s_port_t)portNo, (char*)data, (size_t)len, portMAX_DELAY);
+  size_t bytes_read = 0;
+  i2s_read((i2s_port_t)portNo, data, (size_t)len, bytes_read, portMAX_DELAY);
+  return bytes_read;
 }
 
-bool AudioOutputI2S::SetPinout(int bclk, int wclk, int din)
+bool AudioInputI2S::SetPinout(int bclk, int wclk, int din)
 {
 #ifdef ESP32
   i2s_pin_config_t pin_config = {
@@ -109,7 +109,7 @@ bool AudioOutputI2S::SetPinout(int bclk, int wclk, int din)
 #endif
 }
 
-bool AudioOutputI2S::SetRate(int hz)
+bool AudioInputI2S::SetRate(int hz)
 {
   // TODO - have a list of allowable rates from constructor, check them
   this->hertz = hz;
@@ -121,7 +121,7 @@ bool AudioOutputI2S::SetRate(int hz)
   return true;
 }
 
-bool AudioOutputI2S::SetBitsPerSample(int bits)
+bool AudioInputI2S::SetBitsPerSample(int bits)
 {
   if ( (bits != 32) && (bits != 16) && (bits != 8) ) return false;
   this->bps = bits;
