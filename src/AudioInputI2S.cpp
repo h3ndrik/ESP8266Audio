@@ -86,8 +86,8 @@ uint32_t AudioInputI2S::read(void* data, size_t len)
 {
   if (!i2sOn) return 0;
   size_t bytes_read = 0;
-  bytes_read = i2s_read_bytes((i2s_port_t)portNo, (char*)data, (size_t)len, portMAX_DELAY);
-  //i2s_read((i2s_port_t)portNo, data, (size_t)len, bytes_read, portMAX_DELAY);
+  //bytes_read = i2s_read_bytes((i2s_port_t)portNo, (char*)data, (size_t)len, portMAX_DELAY);
+  esp_err_t err = i2s_read((i2s_port_t)portNo, data, len, &bytes_read, portMAX_DELAY);
   return bytes_read;
 }
 
