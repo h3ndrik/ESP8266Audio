@@ -135,7 +135,7 @@ bool AudioInputI2S::SetBitsPerSample(int bits)
   return true;
 }
 
-bool SetGain(int bits)
+bool AudioInputI2S::SetGain(int bits)
 {
   if (bits < -2 || bits > 0) return false;
   this->gain_shift = -bits;
