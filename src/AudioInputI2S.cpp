@@ -12,10 +12,14 @@
 #endif
 #include "AudioInputI2S.h"
 
-AudioInputI2S::AudioInputI2S(int port, int use_apll)
+AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
 {
   this->portNo = port;
   this->i2sOn = false;
+
+  const int buffLen = 8*64;
+  buff = (uint8_t*)malloc(buffLen);
+
 #ifdef ESP32
   if (!i2sOn) {
     if (use_apll == APLL_AUTO) {
@@ -35,8 +39,8 @@ AudioInputI2S::AudioInputI2S(int port, int use_apll)
       .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
       .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_LSB),
       .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1, // high interrupt priority
-      .dma_buf_count = 8,
-      .dma_buf_len = 8,
+      .dma_buf_count = dma_buf_count,
+      .dma_buf_len = 64,
       .use_apll = use_apll // Use audio PLL
     };
     Serial.printf("+%d %p\n", portNo, &i2s_config_adc);
@@ -82,12 +86,12 @@ uint32_t AudioInputI2S::GetSample()
   return sampleIn;
 }
 
-uint32_t AudioInputI2S::read(void* data, size_t len)
+uint32_t AudioInputI2S::read(void* data, size_t len_bytes)
 {
   if (!i2sOn) return 0;
   size_t bytes_read = 0;
   //bytes_read = i2s_read_bytes((i2s_port_t)portNo, (char*)data, (size_t)len, portMAX_DELAY);
-  esp_err_t err = i2s_read((i2s_port_t)portNo, data, len, &bytes_read, portMAX_DELAY);
+  esp_err_t err = i2s_read((i2s_port_t)portNo, data, len_bytes, &bytes_read, portMAX_DELAY);
   return bytes_read;
 }
 
@@ -126,5 +130,39 @@ bool AudioInputI2S::SetBitsPerSample(int bits)
 {
   if ( (bits != 32) && (bits != 16) && (bits != 8) ) return false;
   this->bps = bits;
+  return true;
+}
+
+bool AudioInputI2S::stop() {
+  return false;
+}
+
+bool AudioInputI2S::isRunning() {
+  return i2sOn;
+}
+
+bool AudioInputI2S::loop() {
+  if (!i2sOn) return false;
+
+  while (validSamples) {
+    if (!output->ConsumeSample(buff[curSample*4]>>14)) {
+      output->loop();
+      return true;
+    }
+    validSamples--;
+    curSample++;
+  }
+
+  validSamples = read(buff, buffLen) / 4;
+  curSample = 0;
+
+  output->loop();
+}
+
+bool AudioInputI2S::begin(AudioOutput *output) {
+  if (!output) return false;
+  this->output = output;
+  output->begin();
+  output->SetBitsPerSample(32);
   return true;
 }
