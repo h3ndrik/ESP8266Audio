@@ -7,7 +7,9 @@
 #ifndef _AUDIOINPUTI2S_H
 #define _AUDIOINPUTI2S_H
 
-
+#include <Arduino.h>
+#include "AudioStatus.h"
+#include "AudioOutput.h"
 
 class AudioInputI2S
 {
@@ -33,6 +35,7 @@ class AudioInputI2S
     uint8_t bps;
     uint8_t channels;
     AudioOutput *output;
+    const int buffLen = 8*64;
     uint8_t *buff;
     int16_t validSamples;
     int16_t curSample;
