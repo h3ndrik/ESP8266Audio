@@ -17,7 +17,6 @@ AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
   this->portNo = port;
   this->i2sOn = false;
 
-  const int buffLen = 8*64;
   buff = (uint8_t*)malloc(buffLen);
 
 #ifdef ESP32
@@ -145,7 +144,10 @@ bool AudioInputI2S::loop() {
   if (!i2sOn) return false;
 
   while (validSamples) {
-    if (!output->ConsumeSample(buff[curSample*4]>>14)) {
+    int16_t lastSample[2];
+    lastSample[0] = buff[curSample*4]>>14;
+    lastSample[1] = buff[curSample*4]>>14;
+    if (!output->ConsumeSample(lastSample)) {
       output->loop();
       return true;
     }
