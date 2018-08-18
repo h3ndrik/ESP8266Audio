@@ -62,6 +62,7 @@ AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
   i2sOn = true;
   bps = 32;
   channels = 1;
+  gain_shift = 0;
 }
 
 AudioInputI2S::~AudioInputI2S()
@@ -83,9 +84,8 @@ uint32_t AudioInputI2S::GetSample()
 
   uint32_t sampleIn=0;
   i2s_pop_sample((i2s_port_t)portNo, (char*)&sampleIn, portMAX_DELAY);
-  //sampleIn>>=14; // right channel data
 
-  return convert(sampleIn);
+  return sampleIn>>(14+gain_shift);
 }
 
 uint32_t AudioInputI2S::read(void* data, size_t len_bytes)
@@ -135,6 +135,13 @@ bool AudioInputI2S::SetBitsPerSample(int bits)
   return true;
 }
 
+bool SetGain(int bits)
+{
+  if (bits < -2 || bits > 0) return false;
+  this->gain_shift = -bits;
+  return true;
+}
+
 bool AudioInputI2S::stop() {
   return false;
 }
@@ -149,7 +156,7 @@ bool AudioInputI2S::loop() {
   while (validSamples) {
     int16_t lastSample[2];
     uint32_t* buff32 = reinterpret_cast<uint32_t*>(buff);
-    int32_t sample = convert(buff32[curSample]);
+    int32_t sample = buff32[curSample]>>(14+gain_shift);
     lastSample[0] = sample;
     lastSample[1] = sample;
     if (!output->ConsumeSample(lastSample)) {

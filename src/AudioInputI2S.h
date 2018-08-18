@@ -23,6 +23,7 @@ class AudioInputI2S
     virtual bool isRunning();
     virtual bool SetRate(int hz);
     virtual bool SetBitsPerSample(int bits);
+    virtual bool SetGain(int bits);
     uint32_t GetSample(void);
     virtual uint32_t read(void* data, size_t len_bytes);
 
@@ -39,6 +40,7 @@ class AudioInputI2S
     uint8_t *buff;
     int16_t validSamples;
     int16_t curSample;
+    int gain_shift;
 };
 
 #endif // _AUDIOINPUTI2S_H
