@@ -12,6 +12,9 @@
 #endif
 #include "AudioInputI2S.h"
 
+#define convert(sample) (((int32_t)(sample) >> 13) - 240200)
+//#define convert(sample) (sample>>14)
+
 AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
 {
   this->portNo = port;
@@ -46,7 +49,7 @@ AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
     if (i2s_driver_install((i2s_port_t)portNo, &i2s_config_adc, 0, NULL) != ESP_OK) {
       Serial.println("ERROR: Unable to install I2S drives\n");
     }
-    SetPinout(21, 25, 19);
+    //SetPinout(21, 25, 19); // be careful not to overwrite the other i2s channel
 
     i2s_zero_dma_buffer((i2s_port_t)portNo);
   } 
@@ -80,9 +83,9 @@ uint32_t AudioInputI2S::GetSample()
 
   uint32_t sampleIn=0;
   i2s_pop_sample((i2s_port_t)portNo, (char*)&sampleIn, portMAX_DELAY);
-  sampleIn>>=14; // right channel data
+  //sampleIn>>=14; // right channel data
 
-  return sampleIn;
+  return convert(sampleIn);
 }
 
 uint32_t AudioInputI2S::read(void* data, size_t len_bytes)
@@ -145,8 +148,10 @@ bool AudioInputI2S::loop() {
 
   while (validSamples) {
     int16_t lastSample[2];
-    lastSample[0] = buff[curSample*4]>>14;
-    lastSample[1] = buff[curSample*4]>>14;
+    uint32_t* buff32 = reinterpret_cast<uint32_t*>(buff);
+    int32_t sample = convert(buff32[curSample]);
+    lastSample[0] = sample;
+    lastSample[1] = sample;
     if (!output->ConsumeSample(lastSample)) {
       output->loop();
       return true;
@@ -165,6 +170,7 @@ bool AudioInputI2S::begin(AudioOutput *output) {
   if (!output) return false;
   this->output = output;
   output->begin();
-  output->SetBitsPerSample(32);
+  output->SetBitsPerSample(bps);
+  output->SetRate(44100);
   return true;
 }
