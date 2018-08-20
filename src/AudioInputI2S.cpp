@@ -16,6 +16,7 @@ AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
 {
   this->portNo = port;
   this->i2sOn = false;
+  this->hertz = 44100;
 
   buffLen = dma_buf_count*64;
   buff = (uint8_t*)malloc(buffLen);
@@ -34,7 +35,7 @@ AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
 
     i2s_config_t i2s_config_adc = {
       .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-      .sample_rate = 44100,
+      .sample_rate = hertz,
       .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
       .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
       .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S),
@@ -185,6 +186,6 @@ bool AudioInputI2S::begin(AudioOutput *output) {
   this->output = output;
   output->begin();
   output->SetBitsPerSample(bps);
-  output->SetRate(44100);
+  output->SetRate(hertz);
   return true;
 }
