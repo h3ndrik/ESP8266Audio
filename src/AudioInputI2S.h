@@ -36,8 +36,6 @@ class AudioInputI2S
     uint8_t bps;
     uint8_t channels;
     AudioOutput *output;
-    const int buffLen = 8*64;
-    uint8_t *buff;
     int16_t validSamples;
     int16_t curSample;
     int gain_shift;

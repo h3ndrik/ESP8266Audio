@@ -12,15 +12,10 @@
 #endif
 #include "AudioInputI2S.h"
 
-//#define convert(sample) (((int32_t)(sample) >> 13) - 240200)
-#define convert(sample) (sample>>14) // actually, resolution is 18Bit
-
 AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
 {
   this->portNo = port;
   this->i2sOn = false;
-
-  buff = (uint8_t*)malloc(buffLen);
 
 #ifdef ESP32
   if (!i2sOn) {
@@ -93,7 +88,7 @@ uint32_t AudioInputI2S::read(void* data, size_t len_bytes)
   if (!i2sOn) return 0;
   size_t bytes_read = 0;
   //bytes_read = i2s_read_bytes((i2s_port_t)portNo, (char*)data, (size_t)len, portMAX_DELAY);
-  esp_err_t err = i2s_read((i2s_port_t)portNo, data, len_bytes, &bytes_read, portMAX_DELAY);
+  esp_err_t err = i2s_read((i2s_port_t)portNo, data, len_bytes, &bytes_read, 0);
   return bytes_read;
 }
 
@@ -153,22 +148,27 @@ bool AudioInputI2S::isRunning() {
 bool AudioInputI2S::loop() {
   if (!i2sOn) return false;
 
-  while (validSamples) {
-    int16_t lastSample[2];
-    uint32_t* buff32 = reinterpret_cast<uint32_t*>(buff);
-    int32_t sample = buff32[curSample]>>(14+gain_shift);
-    lastSample[0] = sample;
-    lastSample[1] = sample;
-    if (!output->ConsumeSample(lastSample)) {
-      output->loop();
-      return true;
-    }
-    validSamples--;
-    curSample++;
-  }
+  const int buffLen = 8*64;
+  uint8_t buff[buffLen];
+  uint32_t* buff32 = reinterpret_cast<uint32_t*>(buff);
 
-  validSamples = read(buff, buffLen) / 4;
-  curSample = 0;
+  do {
+  while (validSamples) {
+      int32_t sample = buff32[curSample]>>(14+gain_shift);
+      int16_t lastSample[2];
+      lastSample[0] = sample;
+      lastSample[1] = sample;
+      if (!output->ConsumeSample(lastSample)) {
+        output->loop();
+        return true;
+      }
+      validSamples--;
+      curSample++;
+    }
+
+    validSamples = read(buff, buffLen) / sizeof(uint32_t);
+    curSample = 0;
+  } while (validSamples == buffLen); // read in buffLen chunks
 
   output->loop();
 }
