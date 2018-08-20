@@ -142,7 +142,10 @@ bool AudioInputI2S::SetGain(float f)
 }
 
 bool AudioInputI2S::stop() {
-  return false;
+  i2sOn = false;
+  output->stop();
+  esp_err_t err = i2s_stop((i2s_port_t)portNo);
+  return (err == ESP_OK);
 }
 
 bool AudioInputI2S::isRunning() {
@@ -178,5 +181,9 @@ bool AudioInputI2S::begin(AudioOutput *output) {
   output->begin();
   output->SetBitsPerSample(bps);
   output->SetRate(44100);
+  if (!i2sOn) {
+    esp_err_t err = i2s_start((i2s_port_t)portNo);
+    if (err != ESP_OK) return false;
+  }
   return true;
 }
