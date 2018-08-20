@@ -25,3 +25,5 @@ AudioOutputSerialWAV	KEYWORD1
 AudioOutputSPIFFSWAV	KEYWORD1
 AudioOutputMixer	KEYWORD1
 AudioOutputMixerStub	KEYWORD1
+AudioOutputFilterG11	KEYWORD1
+AudioOutputRTPStream	KEYWORD1
