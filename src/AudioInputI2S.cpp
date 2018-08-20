@@ -17,6 +17,9 @@ AudioInputI2S::AudioInputI2S(int port, int dma_buf_count, int use_apll)
   this->portNo = port;
   this->i2sOn = false;
 
+  buffLen = dma_buf_count*64;
+  buff = (uint8_t*)malloc(buffLen);
+
 #ifdef ESP32
   if (!i2sOn) {
     if (use_apll == APLL_AUTO) {
@@ -130,10 +133,11 @@ bool AudioInputI2S::SetBitsPerSample(int bits)
   return true;
 }
 
-bool AudioInputI2S::SetGain(int bits)
+bool AudioInputI2S::SetGain(float f)
 {
-  if (bits < -2 || bits > 0) return false;
-  this->gain_shift = -bits;
+  if (f < 0.33) this->gain_shift = 2;
+  else if (f < 0.66) this->gain_shift = 1;
+  else this->gain_shift = 0;
   return true;
 }
 
@@ -148,27 +152,22 @@ bool AudioInputI2S::isRunning() {
 bool AudioInputI2S::loop() {
   if (!i2sOn) return false;
 
-  const int buffLen = 8*64;
-  uint8_t buff[buffLen];
   uint32_t* buff32 = reinterpret_cast<uint32_t*>(buff);
 
-  do {
   while (validSamples) {
-      int32_t sample = buff32[curSample]>>(14+gain_shift);
-      int16_t lastSample[2];
-      lastSample[0] = sample;
-      lastSample[1] = sample;
-      if (!output->ConsumeSample(lastSample)) {
-        output->loop();
-        return true;
-      }
-      validSamples--;
-      curSample++;
+    int32_t sample = buff32[curSample]>>(14+gain_shift);
+    int16_t lastSample[2] = {sample, sample};
+    if (!output->ConsumeSample(lastSample)) {
+      output->loop();
+      yield();
+      return true;
     }
+    validSamples--;
+    curSample++;
+  }
 
-    validSamples = read(buff, buffLen) / sizeof(uint32_t);
-    curSample = 0;
-  } while (validSamples == buffLen); // read in buffLen chunks
+  validSamples = read(buff, buffLen) / sizeof(uint32_t);
+  curSample = 0;
 
   output->loop();
 }
