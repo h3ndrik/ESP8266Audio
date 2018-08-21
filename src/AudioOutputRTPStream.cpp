@@ -32,13 +32,14 @@
 #include <WiFiUdp.h>
 #include "AudioOutputRTPStream.h"
 
-AudioOutputRTPStream::AudioOutputRTPStream(const IPAddress listener, const int port)
+AudioOutputRTPStream::AudioOutputRTPStream(const IPAddress listener, const int port, const uint8_t payload_type)
 {
   this->listener = listener;
   this->port = port;
+  this->payload_type = payload_type;
   hertz = 8000;
   channels = 1;
-  bps = 32;
+  bps = 16;
   this->buff = NULL;
 }
 
@@ -52,32 +53,59 @@ bool AudioOutputRTPStream::SetRate(int hz)
   this->hertz = hz;
 
   if (buff != NULL) free(buff);
-  buffLen = 0.02 * hz * sizeof(int16_t) * channels; // send 20ms in one packet
+  buffLen = PACKET_MS * hz * (bps/8) * channels + RTP_HEADER_SIZE; // send 20ms in one packet
   buff = (uint8_t*)malloc(buffLen);
+  cnt = RTP_HEADER_SIZE;
+
+  rtp_header* header = reinterpret_cast<rtp_header*>(buff);
+  header->ver=2;
+  header->pad=0;
+  header->ext=0;
+  header->cc=0;
+  header->m=0;
+  header->pt = this->payload_type;
+  header->seq = esp_random();
+  header->ssrc = this->ssrc;
   return true;
 }
 
 bool AudioOutputRTPStream::begin()
 {
+  this->ssrc = esp_random();
   SetRate(hertz);
 }
 
 bool AudioOutputRTPStream::ConsumeSample(int16_t sample[2])
 {
-  int16_t* buff16 = reinterpret_cast<int16_t*>(buff);
-  if (channels == 1) {
-    buff16[cnt] = sample[0];
-  } else if (channels == 2) {
-    buff16[channels*cnt] = sample[0];
-    buff16[channels*cnt+1] = sample[1];
-  } else { return false; }
-  cnt++;
-  if (cnt*sizeof(int16_t)*channels < buffLen) return true;
+  if (bps == 16) {
+    int16_t* buff16 = reinterpret_cast<int16_t*>(buff);
+    if (channels == 1) {
+      buff16[cnt] = sample[0];
+    } else if (channels == 2) {
+      buff16[channels*cnt] = sample[0];
+      buff16[channels*cnt+1] = sample[1];
+    } else { return false; }
+  } else if (bps == 8) {
+    if (channels == 1) {
+      buff[cnt] = sample[0];
+    } else if (channels == 2) {
+      buff[channels*cnt] = sample[0];
+      buff[channels*cnt+1] = sample[1];
+Serial.println("test");
+    } else { return false; }
+  }
+    cnt++;
+    if (cnt*(bps/8)*channels < buffLen) return true;
+
+  rtp_header* header = reinterpret_cast<rtp_header*>(buff);
+
+  header->seq++;
+  header->ts = header->seq * PACKET_MS * hertz;
 
   udp.beginPacket(listener, port);
   udp.write((uint8_t*)buff, buffLen);
   udp.endPacket();
-  cnt = 0;
+  cnt = RTP_HEADER_SIZE;
 
   return true;
 }

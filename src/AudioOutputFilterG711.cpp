@@ -40,7 +40,8 @@ bool AudioOutputFilterG711::SetRate(int hz)
 
 bool AudioOutputFilterG711::SetBitsPerSample(int bits)
 {
-  return sink->SetBitsPerSample(bits);
+  //return sink->SetBitsPerSample(bits);
+  return false;
 }
 
 bool AudioOutputFilterG711::SetChannels(int channels)
@@ -55,6 +56,9 @@ bool AudioOutputFilterG711::SetGain(float gain)
 
 bool AudioOutputFilterG711::begin()
 {
+  if (codec == ALAW || codec == ULAW) {
+    sink->SetBitsPerSample(8);
+  }
   return sink->begin();
 }
 
