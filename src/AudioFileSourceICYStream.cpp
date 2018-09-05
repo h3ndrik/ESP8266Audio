@@ -36,11 +36,11 @@ AudioFileSourceICYStream::AudioFileSourceICYStream(const char *url)
 
 bool AudioFileSourceICYStream::open(const char *url)
 {
-  static const char *hdr[] = { "icy-metaint" };
+  static const char *hdr[] = { "icy-metaint", "icy-name" };
   pos = 0;
   http.begin(url);
   http.addHeader("Icy-MetaData", "1");
-  http.collectHeaders( hdr, 1 );
+  http.collectHeaders( hdr, sizeof(hdr)/sizeof(char*) );
   http.setReuse(true);
   int code = http.GET();
   if (code != HTTP_CODE_OK) {
@@ -55,6 +55,9 @@ bool AudioFileSourceICYStream::open(const char *url)
     icyMetaInt = 0;
   }
   icyByteCount = 0;
+  if (http.hasHeader(hdr[1])) {
+    icy-name = http.header(hdr[1]);
+  }
   size = http.getSize();
   strncpy(saveURL, url, sizeof(saveURL));
   saveURL[sizeof(saveURL)-1] = 0;
